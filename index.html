@@ -748,10 +748,12 @@
       gid: "0",
       name: "Google Таблицы"
     };
-    const PRINT_PAGE_WIDTH = 960;
-    const PRINT_PAGE_HEIGHT = 650;
+    const PRINT_SAFE_WIDTH = 960;
+    const PRINT_SAFE_HEIGHT = 650;
+    const PRINT_SCALE_PADDING = .98;
     const ITEM_STRIPE_COLOR = "#2f7ed8";
     const ITEM_RANGE_WASH = withAlpha(ITEM_STRIPE_COLOR, .12);
+    let printScrollState = null;
     const PRODUCT_LOGOS = new Map(Object.entries({
       "офд": "./assets/logos/ofd.svg",
       "кудир": "./assets/logos/kudir.svg",
@@ -1327,6 +1329,12 @@
       if (!surface) return;
 
       if (els.stage) {
+        if (!printScrollState) {
+          printScrollState = {
+            left: els.stage.scrollLeft,
+            top: els.stage.scrollTop
+          };
+        }
         els.stage.scrollLeft = 0;
         els.stage.scrollTop = 0;
       }
@@ -1336,7 +1344,8 @@
       const surfaceHeight = parseFloat(surface.style.height) || surface.offsetHeight || els.roadmap.scrollHeight;
       if (!surfaceWidth || !surfaceHeight) return;
 
-      const scale = Math.min(PRINT_PAGE_WIDTH / surfaceWidth, PRINT_PAGE_HEIGHT / surfaceHeight, 1);
+      const rawScale = Math.min(PRINT_SAFE_WIDTH / surfaceWidth, PRINT_SAFE_HEIGHT / surfaceHeight, 1);
+      const scale = rawScale < 1 ? rawScale * PRINT_SCALE_PADDING : 1;
       document.documentElement.style.setProperty("--print-scale", scale.toFixed(4));
       document.documentElement.style.setProperty("--print-layout-width", `${Math.ceil(surfaceWidth * scale)}px`);
       document.documentElement.style.setProperty("--print-layout-height", `${Math.ceil(surfaceHeight * scale)}px`);
@@ -1344,6 +1353,11 @@
 
     function restoreScreenLayout() {
       resetPrintLayout();
+      if (printScrollState && els.stage) {
+        els.stage.scrollLeft = printScrollState.left;
+        els.stage.scrollTop = printScrollState.top;
+      }
+      printScrollState = null;
       updatePinnedLabels();
     }
 
