@@ -16,6 +16,9 @@
       --label-width: 154px;
       --header-height: 48px;
       --control-height: 74px;
+      --print-scale: 1;
+      --print-layout-width: auto;
+      --print-layout-height: auto;
     }
 
     * {
@@ -619,9 +622,21 @@
       }
     }
 
+    @page {
+      size: landscape;
+      margin: 6mm;
+    }
+
     @media print {
+      html,
       body {
+        overflow: hidden;
         background: #fff;
+      }
+
+      .app-shell {
+        min-height: 0;
+        display: block;
       }
 
       .topbar,
@@ -630,14 +645,35 @@
       }
 
       .stage {
+        width: var(--print-layout-width);
+        height: var(--print-layout-height);
         padding: 0;
-        overflow: visible;
+        overflow: hidden;
         background: #fff;
       }
 
       .roadmap {
+        width: var(--print-layout-width) !important;
+        height: var(--print-layout-height) !important;
+        min-width: 0;
+        overflow: visible;
+        background: #fff;
         border: 0;
         box-shadow: none;
+      }
+
+      .roadmap-surface {
+        min-height: 0;
+        transform: scale(var(--print-scale));
+        transform-origin: top left;
+      }
+
+      .sticky-label-bg,
+      .lane-labels,
+      .corner-label,
+      .month-row,
+      .header-divider {
+        transform: none !important;
       }
     }
   </style>
@@ -712,6 +748,8 @@
       gid: "0",
       name: "Google Таблицы"
     };
+    const PRINT_PAGE_WIDTH = 960;
+    const PRINT_PAGE_HEIGHT = 650;
     const ITEM_STRIPE_COLOR = "#2f7ed8";
     const ITEM_RANGE_WASH = withAlpha(ITEM_STRIPE_COLOR, .12);
     const PRODUCT_LOGOS = new Map(Object.entries({
@@ -813,7 +851,10 @@
       render();
     });
 
-    els.printButton.addEventListener("click", () => window.print());
+    els.printButton.addEventListener("click", () => {
+      preparePrintLayout();
+      requestAnimationFrame(() => window.print());
+    });
     els.yearInput.addEventListener("change", () => {
       if (state.rawRows) {
         const items = rowsToItems(state.rawRows);
@@ -838,6 +879,8 @@
     els.stage.addEventListener("scroll", updatePinnedLabels);
     window.addEventListener("scroll", updatePinnedLabels, { passive: true });
     window.addEventListener("resize", updatePinnedLabels);
+    window.addEventListener("beforeprint", preparePrintLayout);
+    window.addEventListener("afterprint", restoreScreenLayout);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeReason();
     });
@@ -1274,6 +1317,40 @@
 
     function syncBrandTitle(title) {
       if (els.brandTitle) els.brandTitle.textContent = title;
+    }
+
+    function preparePrintLayout() {
+      resetPrintLayout();
+      if (!els.roadmap || els.roadmap.classList.contains("is-empty")) return;
+
+      const surface = els.roadmap.querySelector(".roadmap-surface");
+      if (!surface) return;
+
+      if (els.stage) {
+        els.stage.scrollLeft = 0;
+        els.stage.scrollTop = 0;
+      }
+      updatePinnedLabels();
+
+      const surfaceWidth = parseFloat(surface.style.width) || surface.offsetWidth || els.roadmap.scrollWidth;
+      const surfaceHeight = parseFloat(surface.style.height) || surface.offsetHeight || els.roadmap.scrollHeight;
+      if (!surfaceWidth || !surfaceHeight) return;
+
+      const scale = Math.min(PRINT_PAGE_WIDTH / surfaceWidth, PRINT_PAGE_HEIGHT / surfaceHeight, 1);
+      document.documentElement.style.setProperty("--print-scale", scale.toFixed(4));
+      document.documentElement.style.setProperty("--print-layout-width", `${Math.ceil(surfaceWidth * scale)}px`);
+      document.documentElement.style.setProperty("--print-layout-height", `${Math.ceil(surfaceHeight * scale)}px`);
+    }
+
+    function restoreScreenLayout() {
+      resetPrintLayout();
+      updatePinnedLabels();
+    }
+
+    function resetPrintLayout() {
+      document.documentElement.style.removeProperty("--print-scale");
+      document.documentElement.style.removeProperty("--print-layout-width");
+      document.documentElement.style.removeProperty("--print-layout-height");
     }
 
     function updatePinnedLabels() {
