@@ -664,20 +664,23 @@
         box-shadow: none;
       }
 
+      .roadmap,
+      .roadmap * {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
       .roadmap-surface {
         min-height: 0;
+        /* Chrome PDF drops text inside transformed print content; zoom preserves text rendering. */
         zoom: var(--print-scale);
       }
 
-      .month,
-      .lane-label-name,
-      .item-title,
-      .item-date,
-      .corner-label {
+      .roadmap :is(.month, .lane-label-name, .item-title, .item-date, .corner-label) {
         visibility: visible !important;
         opacity: 1 !important;
         color: #111418 !important;
-        -webkit-text-fill-color: #111418;
+        -webkit-text-fill-color: currentColor;
       }
 
       .sticky-label-bg,
