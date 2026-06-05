@@ -900,7 +900,8 @@
       loadToken: 0,
       title: "Roadmap ЕЛКП",
       isPrintLayout: false,
-      printDayScale: null
+      printDayScale: null,
+      printOverflow: false
     };
 
     const els = {
@@ -959,9 +960,10 @@
       render();
     });
 
-    els.printButton.addEventListener("click", () => {
+    els.printButton.addEventListener("click", async () => {
       preparePrintLayout();
-      requestAnimationFrame(() => window.print());
+      await waitForPrintAssets();
+      requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
     });
     els.yearInput.addEventListener("change", () => {
       if (state.rawRows) {
@@ -989,6 +991,12 @@
     window.addEventListener("resize", updatePinnedLabels);
     window.addEventListener("beforeprint", preparePrintLayout);
     window.addEventListener("afterprint", restoreScreenLayout);
+    if (window.matchMedia) {
+      const printQuery = window.matchMedia("print");
+      printQuery.addEventListener("change", (event) => {
+        if (!event.matches) restoreScreenLayout();
+      });
+    }
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeReason();
     });
@@ -1458,6 +1466,10 @@
       const surfaceHeight = parseFloat(surface.style.height) || surface.offsetHeight || els.roadmap.scrollHeight;
       if (!surfaceWidth || !surfaceHeight) return;
 
+      state.printOverflow = surfaceWidth > PRINT_SAFE_WIDTH || surfaceHeight > PRINT_SAFE_HEIGHT;
+      if (state.printOverflow) {
+        console.warn("Roadmap PDF may not fit one page. Narrow the date range or reduce loaded items.");
+      }
       document.documentElement.style.setProperty("--print-layout-width", `${Math.ceil(surfaceWidth)}px`);
       document.documentElement.style.setProperty("--print-layout-height", `${Math.ceil(surfaceHeight)}px`);
     }
@@ -1467,6 +1479,7 @@
       if (state.isPrintLayout) {
         state.isPrintLayout = false;
         state.printDayScale = null;
+        state.printOverflow = false;
         render();
       }
       if (printScrollState && els.stage) {
@@ -1520,6 +1533,26 @@
         width: monthLayout.width + labelWidth(),
         height: layout.height + headerHeight()
       };
+    }
+
+    async function waitForPrintAssets() {
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (error) {
+          console.warn("Fonts were not ready before print", error);
+        }
+      }
+
+      const images = Array.from(els.roadmap.querySelectorAll("img"));
+      await Promise.all(images.map((image) => {
+        if (image.complete) return Promise.resolve();
+        if (image.decode) return image.decode().catch(() => {});
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      }));
     }
 
     function updatePinnedLabels() {
