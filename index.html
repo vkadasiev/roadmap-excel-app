@@ -712,20 +712,7 @@
       gid: "0",
       name: "Google Таблицы"
     };
-    const NEW_PRODUCT_COLOR = "#2b9faa";
-    const PRODUCT_COLORS = new Map(Object.entries({
-      "офд": "#2b9faa",
-      "эдо": "#e8a51a",
-      "документооборот": "#e8a51a",
-      "елк": "#4b5563",
-      "елкп": "#2b9faa",
-      "кассы": "#2b9faa",
-      "кудир": "#2f7ed8",
-      "бухгалтерия": "#2f7ed8",
-      "го": "#7a64d4",
-      "аккаунт": "#8b9298",
-      "покупки": "#8b9298"
-    }));
+    const ITEM_STRIPE_COLOR = "#2f7ed8";
     const PRODUCT_LOGOS = new Map(Object.entries({
       "офд": "./assets/logos/ofd.svg",
       "кудир": "./assets/logos/kudir.svg",
@@ -1135,7 +1122,7 @@
     }
 
     function productColor(product) {
-      return PRODUCT_COLORS.get(productLaneKey(product)) || NEW_PRODUCT_COLOR;
+      return ITEM_STRIPE_COLOR;
     }
 
     function productLogo(product) {
