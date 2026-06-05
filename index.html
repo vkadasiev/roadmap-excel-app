@@ -632,6 +632,8 @@
       body {
         overflow: hidden;
         background: #fff;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
 
       .app-shell {
@@ -664,8 +666,18 @@
 
       .roadmap-surface {
         min-height: 0;
-        transform: scale(var(--print-scale));
-        transform-origin: top left;
+        zoom: var(--print-scale);
+      }
+
+      .month,
+      .lane-label-name,
+      .item-title,
+      .item-date,
+      .corner-label {
+        visibility: visible !important;
+        opacity: 1 !important;
+        color: #111418 !important;
+        -webkit-text-fill-color: #111418;
       }
 
       .sticky-label-bg,
@@ -698,7 +710,7 @@
 
     <section class="controls">
       <div class="actions">
-        <label class="file-button primary">
+        <label class="file-button">
           <span>Загрузить Excel</span>
           <input id="fileInput" type="file" accept=".xlsx,.xls,.csv">
         </label>
