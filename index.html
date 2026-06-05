@@ -713,6 +713,7 @@
       name: "Google Таблицы"
     };
     const ITEM_STRIPE_COLOR = "#2f7ed8";
+    const ITEM_RANGE_WASH = withAlpha(ITEM_STRIPE_COLOR, .12);
     const PRODUCT_LOGOS = new Map(Object.entries({
       "офд": "./assets/logos/ofd.svg",
       "кудир": "./assets/logos/kudir.svg",
@@ -1121,7 +1122,7 @@
       return key === "елк" ? "елкп" : key;
     }
 
-    function productColor(product) {
+    function itemStripeColor() {
       return ITEM_STRIPE_COLOR;
     }
 
@@ -1207,8 +1208,8 @@
         node.style.top = `${item.y}px`;
         node.style.width = `${item.width}px`;
         node.style.minHeight = `${item.height}px`;
-        node.style.setProperty("--accent", item.color);
-        node.style.setProperty("--wash", withAlpha(item.color, .12));
+        node.style.setProperty("--accent", item.stripeColor);
+        node.style.setProperty("--wash", ITEM_RANGE_WASH);
         node.innerHTML = `
           <div class="item-title">${escapeHtml(item.title)}</div>
           <div class="item-date">${escapeHtml(formatItemDate(item.sourceStart || item.start, item.sourceEnd || null))}</div>
@@ -1466,7 +1467,7 @@
         lanesByKey.get(laneKey).items.push({
           ...sourceItem,
           order: index,
-          color: productColor(laneKey)
+          stripeColor: itemStripeColor()
         });
       });
 
