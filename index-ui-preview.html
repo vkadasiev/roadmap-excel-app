@@ -404,6 +404,9 @@
     }
 
     .item {
+      --info-button-inset: 6px;
+      --info-button-size: 24px;
+      --info-button-radius: calc(var(--radius-control) - var(--info-button-inset));
       position: absolute;
       min-height: 52px;
       padding: 8px 10px 8px 14px;
@@ -452,15 +455,15 @@
 
     .item.has-reason .item-title,
     .item.has-reason .item-date {
-      padding-right: 32px;
+      padding-right: calc(var(--info-button-size) + var(--info-button-inset) * 2);
     }
 
     .item-info-button {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 24px;
-      height: 24px;
+      top: var(--info-button-inset);
+      right: var(--info-button-inset);
+      width: var(--info-button-size);
+      height: var(--info-button-size);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -468,7 +471,7 @@
       color: var(--paper);
       background: var(--muted);
       border: 0;
-      border-radius: var(--radius-control);
+      border-radius: var(--info-button-radius);
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
