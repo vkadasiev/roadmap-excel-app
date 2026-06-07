@@ -392,8 +392,6 @@
       height: 58px;
       display: block;
       margin: 0 auto;
-      filter: grayscale(1) contrast(.9);
-      opacity: .88;
       object-fit: contain;
     }
 
@@ -409,6 +407,7 @@
       min-height: 52px;
       padding: 8px 10px;
       border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
       border-radius: var(--radius-control);
       color: var(--ink);
       background: var(--paper);
@@ -419,6 +418,7 @@
       min-height: 58px;
       padding: 8px 10px;
       border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
       border-radius: var(--radius-control);
       background: var(--paper);
     }
@@ -861,19 +861,19 @@
     const PRINT_SCALE_STEP = .25;
     let printScrollState = null;
     let printRootState = null;
-    const NEW_PRODUCT_COLOR = "#0d0d0d";
+    const NEW_PRODUCT_COLOR = "#2b9faa";
     const PRODUCT_COLORS = new Map(Object.entries({
-      "офд": "#0d0d0d",
-      "эдо": "#0d0d0d",
-      "документооборот": "#0d0d0d",
-      "елк": "#0d0d0d",
-      "елкп": "#0d0d0d",
-      "кассы": "#0d0d0d",
-      "кудир": "#0d0d0d",
-      "бухгалтерия": "#0d0d0d",
-      "го": "#0d0d0d",
-      "аккаунт": "#0d0d0d",
-      "покупки": "#0d0d0d"
+      "офд": "#2b9faa",
+      "эдо": "#e8a51a",
+      "документооборот": "#e8a51a",
+      "елк": "#4b5563",
+      "елкп": "#2b9faa",
+      "кассы": "#2b9faa",
+      "кудир": "#2f7ed8",
+      "бухгалтерия": "#2f7ed8",
+      "го": "#2f7ed8",
+      "аккаунт": "#8b9298",
+      "покупки": "#8b9298"
     }));
     const PRODUCT_LOGOS = new Map(Object.entries({
       "офд": "./assets/logos/ofd.svg",
