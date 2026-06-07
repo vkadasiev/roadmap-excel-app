@@ -13,6 +13,7 @@
 - Product logos remain colored.
 - ELKP/ELK roadmap card accent stripes use the main triangle color from `assets/logos/elk.svg`: `#2F6A98`.
 - Print CSS now uses `data-print-text` + print-only `::after` fallback text for months, lane labels, card titles, and dates, fixing PDFs where normal HTML text disappears while borders/logos still print.
+- Print card layout uses wider print-only card widths (`minSingleWidth: 84`, `maxSingleWidth: 138`) and a smaller reason-icon padding (`12px`) so fallback text does not wrap into one-letter columns.
 - Roadmap cards keep colored vertical accent stripes.
 - Card accent stripe is implemented with `.item::before`, not `border-left`, to avoid diagonal/internal corner artifacts.
 - Product header cell (`Продукт`) has white background and typography aligned with month headers.
