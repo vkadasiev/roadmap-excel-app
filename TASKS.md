@@ -23,6 +23,7 @@
 - Latest grid tokens:
   - `--line: #d6d6d6`
   - `--soft-line: #e4e4e4`
+- Single-date roadmap cards are clamped to a narrower max width so short tasks no longer leave a large empty area inside the card.
 
 ## Sub-Agent Review
 
