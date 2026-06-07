@@ -530,19 +530,21 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      background: rgba(13, 13, 13, .16);
+      padding: clamp(16px, 4vw, 32px);
+      background: rgba(13, 13, 13, .2);
+      backdrop-filter: blur(1.5px);
     }
 
     .reason-dialog {
-      width: min(560px, 100%);
-      max-height: min(70vh, 620px);
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(78vh, 680px);
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto minmax(0, 1fr);
       color: var(--ink);
       background: var(--paper);
-      border: 1px solid var(--soft-line);
+      border: 1px solid var(--line);
       border-radius: var(--radius-control);
+      box-shadow: 0 24px 70px rgba(13, 13, 13, .12);
       overflow: hidden;
     }
 
@@ -551,36 +553,107 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 16px 18px;
+      padding: 20px 24px 18px;
       border-bottom: 1px solid var(--soft-line);
-      font-size: 18px;
+    }
+
+    .reason-title {
+      margin: 0;
+      font-size: 22px;
       font-weight: 500;
+      line-height: 1.15;
     }
 
     .reason-close {
-      width: 32px;
-      height: 32px;
+      position: relative;
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       padding: 0;
-      color: var(--ink);
-      background: var(--panel);
-      border: 1px solid var(--soft-line);
+      color: transparent;
+      background: var(--paper);
+      border: 1px solid var(--line);
       border-radius: var(--radius-control);
       cursor: pointer;
-      font-size: 22px;
+      font-size: 0;
       line-height: 1;
+      transition: background .15s ease, border-color .15s ease;
     }
 
-    .reason-text {
-      margin: 0;
-      padding: 18px;
+    .reason-close::before,
+    .reason-close::after {
+      position: absolute;
+      width: 14px;
+      height: 2px;
+      background: var(--ink);
+      border-radius: 999px;
+      content: "";
+    }
+
+    .reason-close::before {
+      transform: rotate(45deg);
+    }
+
+    .reason-close::after {
+      transform: rotate(-45deg);
+    }
+
+    .reason-close:hover {
+      background: var(--panel);
+      border-color: var(--line);
+    }
+
+    .reason-body {
+      min-height: 0;
+      padding: 22px 24px 24px;
       overflow: auto;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.45;
-      white-space: pre-wrap;
+      background: var(--panel);
+    }
+
+    .reason-content {
+      margin: 0;
+      padding-left: 16px;
+      border-left: 3px solid var(--line);
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .reason-paragraph {
+      margin: 0 0 12px;
+    }
+
+    .reason-paragraph:last-child {
+      margin-bottom: 0;
+    }
+
+    .reason-list {
+      display: grid;
+      gap: 10px;
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reason-list li {
+      position: relative;
+      padding-left: 18px;
+      color: #3f3f3f;
+    }
+
+    .reason-list li::before {
+      position: absolute;
+      left: 0;
+      top: .72em;
+      width: 6px;
+      height: 6px;
+      background: var(--line);
+      border-radius: 2px;
+      transform: translateY(-50%);
+      content: "";
     }
 
     .empty {
@@ -690,6 +763,25 @@
 
       .stage {
         padding: 0 14px 14px 0;
+      }
+
+      .reason-backdrop {
+        padding: 14px;
+      }
+
+      .reason-dialog {
+        width: 100%;
+        max-height: 86vh;
+      }
+
+      .reason-header,
+      .reason-body {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
+
+      .reason-title {
+        font-size: 20px;
       }
     }
 
@@ -1655,21 +1747,65 @@
       const backdrop = document.createElement("div");
       backdrop.className = "reason-backdrop";
       backdrop.innerHTML = `
-        <div class="reason-dialog" role="dialog" aria-modal="true" aria-label="Причина переноса">
+        <div class="reason-dialog" role="dialog" aria-modal="true" aria-labelledby="reasonTitle">
           <div class="reason-header">
-            <span>Причина переноса</span>
-            <button class="reason-close" type="button" aria-label="Закрыть">×</button>
+            <h2 class="reason-title" id="reasonTitle">Причина переноса</h2>
+            <button class="reason-close" type="button" aria-label="Закрыть"></button>
           </div>
-          <pre class="reason-text"></pre>
+          <div class="reason-body">
+            <div class="reason-content"></div>
+          </div>
         </div>
       `;
 
-      backdrop.querySelector(".reason-text").textContent = text;
+      renderReasonText(backdrop.querySelector(".reason-content"), text);
       backdrop.querySelector(".reason-close").addEventListener("click", closeReason);
       backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) closeReason();
       });
       document.body.appendChild(backdrop);
+    }
+
+    function renderReasonText(container, text) {
+      container.textContent = "";
+      const lines = String(text || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((raw) => ({ raw, text: raw.trim() }))
+        .filter((line) => line.text);
+
+      if (!lines.length) {
+        appendReasonParagraph(container, "Причина не указана.");
+        return;
+      }
+
+      const hasIndentedDetails = lines.slice(1).some((line) => /^\s{2,}|^\t/.test(line.raw));
+      let list = null;
+      lines.forEach((line, index) => {
+        const bullet = line.text.match(/^([-–—•*]|\d+[.)])\s*(.+)$/);
+        const useList = Boolean(bullet) || (hasIndentedDetails && index > 0);
+        const value = bullet ? bullet[2].trim() : line.text;
+        if (useList) {
+          if (!list) {
+            list = document.createElement("ul");
+            list.className = "reason-list";
+            container.appendChild(list);
+          }
+          const item = document.createElement("li");
+          item.textContent = value;
+          list.appendChild(item);
+        } else {
+          list = null;
+          appendReasonParagraph(container, value);
+        }
+      });
+    }
+
+    function appendReasonParagraph(container, text) {
+      const paragraph = document.createElement("p");
+      paragraph.className = "reason-paragraph";
+      paragraph.textContent = text;
+      container.appendChild(paragraph);
     }
 
     function closeReason() {
