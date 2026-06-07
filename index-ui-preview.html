@@ -20,6 +20,7 @@
       --radius-control: 10px;
       --print-layout-width: auto;
       --print-layout-height: auto;
+      --print-scale: 1;
     }
 
     * {
@@ -835,6 +836,8 @@
 
       .roadmap-surface {
         min-height: 0;
+        transform: scale(var(--print-scale));
+        transform-origin: top left;
       }
 
       .roadmap :is(.month, .lane-label-name, .item-title, .item-date, .corner-label) {
@@ -1688,12 +1691,14 @@
       const surfaceHeight = parseFloat(surface.style.height) || surface.offsetHeight || els.roadmap.scrollHeight;
       if (!surfaceWidth || !surfaceHeight) return;
 
-      state.printOverflow = surfaceWidth > PRINT_SAFE_WIDTH || surfaceHeight > PRINT_SAFE_HEIGHT;
+      const printScale = Math.min(1, PRINT_SAFE_WIDTH / surfaceWidth, PRINT_SAFE_HEIGHT / surfaceHeight);
+      state.printOverflow = printScale < .999;
       if (state.printOverflow) {
-        console.warn("Roadmap PDF may not fit one page. Narrow the date range or reduce loaded items.");
+        console.warn("Roadmap PDF scaled down to fit one page.");
       }
-      document.documentElement.style.setProperty("--print-layout-width", `${Math.ceil(surfaceWidth)}px`);
-      document.documentElement.style.setProperty("--print-layout-height", `${Math.ceil(surfaceHeight)}px`);
+      document.documentElement.style.setProperty("--print-scale", `${Number(printScale.toFixed(4))}`);
+      document.documentElement.style.setProperty("--print-layout-width", `${Math.ceil(surfaceWidth * printScale)}px`);
+      document.documentElement.style.setProperty("--print-layout-height", `${Math.ceil(surfaceHeight * printScale)}px`);
     }
 
     function restoreScreenLayout() {
@@ -1715,6 +1720,7 @@
     function resetPrintLayout() {
       document.documentElement.style.removeProperty("--print-layout-width");
       document.documentElement.style.removeProperty("--print-layout-height");
+      document.documentElement.style.removeProperty("--print-scale");
       if (printRootState) {
         restoreRootCustomProperty("--label-width", printRootState.labelWidth);
         restoreRootCustomProperty("--header-height", printRootState.headerHeight);
