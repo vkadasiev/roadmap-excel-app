@@ -1758,7 +1758,7 @@
     function itemDisplayWidth(item, scale, monthLayout) {
       const contentWidth = requiredContentWidth(item);
       const minSingleWidth = state.isPrintLayout ? 62 : 190;
-      const maxSingleWidth = state.isPrintLayout ? 90 : 340;
+      const maxSingleWidth = state.isPrintLayout ? 90 : 300;
       const minRangeWidth = state.isPrintLayout ? 74 : 176;
       if (item.end && monthLayout) {
         if (isSameMonth(item.start, item.end)) {
@@ -1781,7 +1781,7 @@
       const horizontalPadding = state.isPrintLayout ? (item.end ? 14 : 12) : (item.end ? 40 : 38);
       const averageTitleCharWidth = state.isPrintLayout ? 4.6 : 10.4;
       const averageDateCharWidth = state.isPrintLayout ? 5.2 : 11.2;
-      const titleWrapDivisor = state.isPrintLayout ? 2.8 : 2.8;
+      const titleWrapDivisor = state.isPrintLayout ? 2.8 : 3.6;
       const longestWord = title.split(/\s+/).reduce((max, word) => Math.max(max, word.length), 0);
       const twoLineTitleWidth = Math.ceil(Math.max(
         title.length * averageTitleCharWidth / titleWrapDivisor,
