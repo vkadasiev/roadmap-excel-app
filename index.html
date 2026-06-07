@@ -447,6 +447,11 @@
       background: var(--paper);
     }
 
+    .item.on-white-lane,
+    .item.range.on-white-lane {
+      background: var(--panel);
+    }
+
     .item-title {
       display: block;
       overflow: visible;
@@ -1426,7 +1431,7 @@
       });
 
       layout.items.forEach((item) => {
-        const node = div(`item${item.isRange ? " range" : ""}${item.reason ? " has-reason" : ""}`);
+        const node = div(`item${item.isRange ? " range" : ""}${item.reason ? " has-reason" : ""}${item.laneIndex % 2 === 1 ? " on-white-lane" : ""}`);
         node.style.left = `${item.x}px`;
         node.style.top = `${item.y}px`;
         node.style.width = `${item.width}px`;
@@ -1827,7 +1832,7 @@
       const laidOut = [];
       let cursorTop = 0;
 
-      laneGroups.forEach((laneGroup) => {
+      laneGroups.forEach((laneGroup, laneIndex) => {
         const laneItems = laneGroup.items
           .map((item) => {
             const width = itemDisplayWidth(item, scale, monthLayout);
@@ -1874,7 +1879,8 @@
         laneItems.forEach((item) => {
           laidOut.push({
             ...item,
-            y: cursorTop + laneItemTop + slotTops[item.slot]
+            y: cursorTop + laneItemTop + slotTops[item.slot],
+            laneIndex
           });
         });
 
