@@ -837,11 +837,18 @@
         min-height: 0;
       }
 
-      .roadmap :is(.month, .lane-label-name, .item-title, .item-date, .corner-label) {
+      .roadmap :is(.month, .lane-label-name, .item-title, .corner-label) {
         visibility: visible !important;
         opacity: 1 !important;
         color: #0d0d0d !important;
-        -webkit-text-fill-color: currentColor;
+        -webkit-text-fill-color: #0d0d0d !important;
+      }
+
+      .roadmap .item-date {
+        visibility: visible !important;
+        opacity: 1 !important;
+        color: #5d5d5d !important;
+        -webkit-text-fill-color: #5d5d5d !important;
       }
 
       .sticky-label-bg,
