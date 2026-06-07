@@ -11,6 +11,7 @@
 
 - Minimal white UI based on the provided ChatGPT-like design guide.
 - Product logos remain colored.
+- ELKP/ELK roadmap card accent stripes use the main triangle color from `assets/logos/elk.svg`: `#2F6A98`.
 - Roadmap cards keep colored vertical accent stripes.
 - Card accent stripe is implemented with `.item::before`, not `border-left`, to avoid diagonal/internal corner artifacts.
 - Product header cell (`Продукт`) has white background and typography aligned with month headers.
