@@ -947,6 +947,9 @@
       }
 
       .item {
+        --info-button-inset: 1px;
+        --info-button-size: 10px;
+        --info-button-radius: 3px;
         min-height: 0;
         padding: 3px 5px 4px 6px;
       }
@@ -954,6 +957,11 @@
       .item.range {
         min-height: 0;
         padding: 3px 5px 4px 6px;
+      }
+
+      .item.has-reason .item-title,
+      .item.has-reason .item-date {
+        padding-right: 12px;
       }
 
       .item-title {
@@ -1951,9 +1959,9 @@
 
     function itemDisplayWidth(item, scale, monthLayout) {
       const contentWidth = requiredContentWidth(item);
-      const minSingleWidth = state.isPrintLayout ? 62 : 190;
-      const maxSingleWidth = state.isPrintLayout ? 90 : 300;
-      const minRangeWidth = state.isPrintLayout ? 74 : 176;
+      const minSingleWidth = state.isPrintLayout ? 84 : 190;
+      const maxSingleWidth = state.isPrintLayout ? 138 : 300;
+      const minRangeWidth = state.isPrintLayout ? 96 : 176;
       if (item.end && monthLayout) {
         if (isSameMonth(item.start, item.end)) {
           const rangeWidth = daysBetween(item.start, addDays(item.end, 1)) * scale;
@@ -1972,10 +1980,10 @@
     function requiredContentWidth(item) {
       const title = String(item.title || "");
       const date = formatItemDate(item.start, item.end);
-      const horizontalPadding = state.isPrintLayout ? (item.end ? 14 : 12) : (item.end ? 40 : 38);
-      const averageTitleCharWidth = state.isPrintLayout ? 4.6 : 10.4;
+      const horizontalPadding = state.isPrintLayout ? (item.end ? 22 : 18) : (item.end ? 40 : 38);
+      const averageTitleCharWidth = state.isPrintLayout ? 4.9 : 10.4;
       const averageDateCharWidth = state.isPrintLayout ? 5.2 : 11.2;
-      const titleWrapDivisor = state.isPrintLayout ? 2.8 : 3.6;
+      const titleWrapDivisor = state.isPrintLayout ? 2.2 : 3.6;
       const longestWord = title.split(/\s+/).reduce((max, word) => Math.max(max, word.length), 0);
       const twoLineTitleWidth = Math.ceil(Math.max(
         title.length * averageTitleCharWidth / titleWrapDivisor,
@@ -1986,7 +1994,7 @@
     }
 
     function itemDisplayHeight(item, width) {
-      const horizontalPadding = state.isPrintLayout ? (item.end ? 12 : 10) : (item.end ? 25 : 21);
+      const horizontalPadding = state.isPrintLayout ? (item.end ? 22 : 18) : (item.end ? 25 : 21);
       const usableWidth = Math.max(state.isPrintLayout ? 42 : 120, width - horizontalPadding);
       const averageCharWidth = state.isPrintLayout ? 4.2 : 9.2;
       const lineHeight = state.isPrintLayout ? 9 : 22;
