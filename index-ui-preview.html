@@ -468,19 +468,41 @@
       align-items: center;
       justify-content: center;
       padding: 0;
-      color: var(--paper);
-      background: var(--muted);
+      color: transparent;
+      background: #dedede;
       border: 0;
       border-radius: var(--info-button-radius);
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 0;
       line-height: 1;
       font-family: inherit;
     }
 
-    .item-info-button:hover {
+    .item-info-button::before,
+    .item-info-button::after {
+      position: absolute;
+      left: 50%;
       background: var(--muted);
+      content: "";
+      transform: translateX(-50%);
+    }
+
+    .item-info-button::before {
+      top: 6px;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+    }
+
+    .item-info-button::after {
+      top: 11px;
+      width: 2px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .item-info-button:hover {
+      background: #cfcfcf;
     }
 
     .reason-backdrop {
@@ -1408,7 +1430,7 @@
           infoButton.type = "button";
           infoButton.title = "Причина переноса";
           infoButton.setAttribute("aria-label", "Показать причину переноса");
-          infoButton.textContent = "i";
+          infoButton.textContent = "";
           infoButton.addEventListener("click", (event) => {
             event.stopPropagation();
             showReason(item.reason);
