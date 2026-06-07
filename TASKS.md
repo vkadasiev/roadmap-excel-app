@@ -21,8 +21,8 @@
   - equal top/right inset;
   - radius is derived from card radius/inset.
 - Latest grid tokens:
-  - `--line: #d6d6d6`
-  - `--soft-line: #e4e4e4`
+  - `--line: #cfcfcf`
+  - `--soft-line: #dddddd`
 - Single-date roadmap cards use a tighter desktop width calculation (`maxSingleWidth: 300`, title wrap divisor `3.6`) so short tasks no longer leave a large empty area inside the card.
 - Cards on white roadmap lanes use the same `--panel` gray as alternate lane bands; cards on gray lanes remain white for contrast.
 
