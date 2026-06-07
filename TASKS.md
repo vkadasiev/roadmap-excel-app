@@ -23,7 +23,7 @@
 - Latest grid tokens:
   - `--line: #cfcfcf`
   - `--soft-line: #dddddd`
-- Single-date roadmap cards use a tighter desktop width calculation (`maxSingleWidth: 300`, title wrap divisor `3.6`) so short tasks no longer leave a large empty area inside the card.
+- Single-date roadmap cards use a tighter desktop width calculation (`minSingleWidth: 116`, `maxSingleWidth: 300`, title wrap divisor `3.6`) so short tasks no longer leave a large empty area inside the card.
 - Cards on white roadmap lanes use the same `--panel` gray as alternate lane bands; cards on gray lanes remain white for contrast.
 
 ## Sub-Agent Review
