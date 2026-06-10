@@ -513,6 +513,141 @@
       opacity: .85;
     }
 
+    .view-toggle {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-control);
+      overflow: hidden;
+      height: 38px;
+    }
+
+    .view-toggle-btn {
+      padding: 0 14px;
+      border: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background .15s ease, color .15s ease;
+    }
+
+    .view-toggle-btn + .view-toggle-btn {
+      border-left: 1px solid var(--line);
+    }
+
+    .view-toggle-btn.is-active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .mv-root {
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .mv-axis {
+      position: absolute;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .mv-dot {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .mv-leader {
+      position: absolute;
+      width: 2px;
+      transform: translateX(-50%);
+      opacity: .5;
+    }
+
+    .mv-chip {
+      position: absolute;
+      box-sizing: border-box;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 12px;
+      padding: 4px 8px;
+      line-height: 1.15;
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .mv-chip.is-past {
+      opacity: .45;
+    }
+
+    /* В отличие от .milestone-flag-title (одна строка + эллипсис, ширина до 340px),
+       здесь плашка узкая и фикс-ширины (labelW ~154px*scale), поэтому заголовок
+       намеренно переносится на 1–2 строки с clamp — иначе русские названия режутся
+       почти полностью. Высота под это заложена в labelH (computeMilestoneLayout).
+       Не «чинить» под однострочный эталон. */
+    .mv-chip-title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 100%;
+      font-weight: 500;
+      color: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .mv-chip-date {
+      margin-top: 1px;
+      color: #fff;
+      opacity: .85;
+      white-space: nowrap;
+    }
+
+    .mv-month-divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--soft-line);
+    }
+
+    .mv-month-label {
+      position: absolute;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .mv-today {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      border-left: 2px dashed #c0392b;
+      opacity: .7;
+      z-index: 1;
+    }
+
+    .mv-today-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      color: #c0392b;
+      font-size: 10px;
+      background: var(--paper);
+      padding: 0 4px;
+      z-index: 4;
+    }
+
     .item.has-reason .item-title,
     .item.has-reason .item-date {
       padding-right: calc(var(--info-button-size) + var(--info-button-inset) * 2);
@@ -1044,6 +1179,13 @@
           <option value="14">Широкий</option>
         </select>
       </label>
+      <label class="field">
+        <span>Вид</span>
+        <div class="view-toggle" id="viewToggle" role="group" aria-label="Переключение вида">
+          <button type="button" class="view-toggle-btn is-active" data-view="full">Полный</button>
+          <button type="button" class="view-toggle-btn" data-view="milestones">Только вехи</button>
+        </div>
+      </label>
       <div class="status" id="status">Загрузите Excel</div>
     </section>
 
@@ -1151,6 +1293,7 @@
       rawRows: null,
       loadToken: 0,
       title: "Roadmap ЕЛКП",
+      viewMode: "full",
       isPrintLayout: false,
       printDayScale: null,
       printOverflow: false
@@ -1167,6 +1310,7 @@
       rangeEndInput: document.getElementById("rangeEndInput"),
       yearInput: document.getElementById("yearInput"),
       scaleInput: document.getElementById("scaleInput"),
+      viewToggle: document.getElementById("viewToggle"),
       status: document.getElementById("status")
     };
 
@@ -1230,6 +1374,17 @@
       render();
     });
     els.scaleInput.addEventListener("change", render);
+    els.viewToggle.addEventListener("click", (event) => {
+      const btn = event.target.closest(".view-toggle-btn");
+      if (!btn) return;
+      const view = btn.dataset.view;
+      if (view === state.viewMode) return;
+      state.viewMode = view;
+      els.viewToggle.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.toggle("is-active", b.dataset.view === view));
+      if (els.stage) { els.stage.scrollLeft = 0; els.stage.scrollTop = 0; }
+      window.scrollTo(0, 0);
+      render();
+    });
     els.rangeStartInput.addEventListener("change", () => {
       syncTitleToSelectedPeriod(state.items);
       render();
@@ -1240,7 +1395,10 @@
     });
     els.stage.addEventListener("scroll", updatePinnedLabels);
     window.addEventListener("scroll", updatePinnedLabels, { passive: true });
-    window.addEventListener("resize", updatePinnedLabels);
+    window.addEventListener("resize", () => {
+      if (state.viewMode === "milestones") render();
+      else updatePinnedLabels();
+    });
     window.addEventListener("beforeprint", preparePrintLayout);
     window.addEventListener("afterprint", restoreScreenLayout);
     if (window.matchMedia) {
@@ -1558,6 +1716,11 @@
         return;
       }
 
+      if (state.viewMode === "milestones") {
+        renderMilestonesView(items);
+        return;
+      }
+
       const selectedRange = getSelectedRange(items);
       const visibleItems = getVisibleItems(items, selectedRange);
       if (!visibleItems.length) {
@@ -1686,6 +1849,203 @@
       surface.append(monthRow, headerDivider, chart, stickyLabelBg, labels, cornerLabel);
       els.roadmap.appendChild(surface);
       updatePinnedLabels();
+    }
+
+    function renderMilestonesView(items) {
+      const selectedRange = getSelectedRange(items);
+      const milestones = items
+        .filter((item) => item.isMilestone && item.start >= selectedRange.start && item.start <= selectedRange.end)
+        .sort((a, b) => a.start - b.start);
+
+      const title = state.title || `Roadmap ЕЛКП ${formatRangeTitleFromDates(selectedRange.start, selectedRange.end)}`;
+      syncBrandTitle(title);
+
+      els.roadmap.classList.remove("is-empty");
+      els.roadmap.style.width = "";
+      els.roadmap.innerHTML = "";
+      if (els.stage) { els.stage.scrollLeft = 0; }
+
+      if (!milestones.length) {
+        renderEmpty("В выбранном периоде нет вех. Измените период или добавьте строки с «Тип = Веха».", { showUpload: false, showTemplate: false });
+        return;
+      }
+
+      const stageTop = els.stage ? els.stage.getBoundingClientRect().top : 0;
+      const availW = Math.max(320, (els.stage ? els.stage.clientWidth : window.innerWidth) - 8);
+      const availH = state.isPrintLayout
+        ? PRINT_SAFE_HEIGHT
+        : Math.max(260, window.innerHeight - Math.max(0, stageTop) - 24);
+
+      let layout = null;
+      for (let oneLine = 0; oneLine <= 1 && (!layout || layout.height > availH); oneLine++) {
+        for (let scale = 1; scale >= 0.5; scale -= 0.05) {
+          const candidate = computeMilestoneLayout(milestones, availW, scale, oneLine === 1);
+          layout = candidate;
+          if (candidate.height <= availH) break;
+        }
+      }
+
+      paintMilestoneLayout(layout, availW);
+    }
+
+    function computeMilestoneLayout(milestones, width, scale, oneLine) {
+      const N = milestones.length;
+      const fontTitle = Math.max(9, Math.round(13 * scale));
+      const fontDate = Math.max(8, Math.round(11 * scale));
+      const fontMonth = Math.max(9, Math.round(13 * scale));
+      const lineH = Math.round(fontTitle * 1.2);
+      const labelLines = oneLine ? 1 : 2;
+      const labelH = labelLines * lineH + fontDate + Math.round(12 * scale);
+      const labelW = Math.max(64, Math.round(154 * scale));
+      const rowGap = Math.max(5, Math.round(10 * scale));
+      const rowH = labelH + rowGap;
+      const gapAxis = Math.max(7, Math.round(14 * scale));
+      const monthStripH = fontMonth + Math.round(12 * scale);
+      const axisH = Math.max(12, Math.round(16 * scale));
+      const sideMargin = Math.max(labelW / 2 + 6, 28);
+
+      const usable = Math.max(1, width - 2 * sideMargin);
+      const slotW = N > 1 ? usable / (N - 1) : 0;
+      const today = stripTime(new Date()).getTime();
+
+      const points = milestones.map((m, i) => ({
+        m,
+        x: N > 1 ? sideMargin + i * slotW : width / 2,
+        side: i % 2 === 0 ? "above" : "below",
+        color: productColor(m.product),
+        title: String(m.title || "").trim(),
+        dateText: formatDate(m.start),
+        isPast: m.start.getTime() < today
+      }));
+
+      const aboveEdges = [];
+      const belowEdges = [];
+      points.forEach((p) => {
+        const edges = p.side === "above" ? aboveEdges : belowEdges;
+        const left = p.x - labelW / 2;
+        let row = 0;
+        while (row < edges.length && edges[row] + rowGap > left) row++;
+        edges[row] = p.x + labelW / 2;
+        p.row = row;
+      });
+      const rowsAbove = aboveEdges.length;
+      const rowsBelow = belowEdges.length;
+
+      const aboveZoneH = rowsAbove > 0 ? gapAxis + rowsAbove * rowH : 0;
+      const belowZoneH = rowsBelow > 0 ? gapAxis + rowsBelow * rowH : 0;
+      const axisY = monthStripH + aboveZoneH;
+      const height = monthStripH + aboveZoneH + axisH + belowZoneH + Math.round(8 * scale);
+
+      points.forEach((p) => {
+        if (p.side === "above") {
+          p.labelBottom = axisY - gapAxis - p.row * rowH;
+          p.labelTop = p.labelBottom - labelH;
+        } else {
+          p.labelTop = axisY + axisH + gapAxis + p.row * rowH;
+          p.labelBottom = p.labelTop + labelH;
+        }
+      });
+
+      const monthRuns = [];
+      points.forEach((p, idx) => {
+        const key = p.m.start.getFullYear() * 12 + p.m.start.getMonth();
+        const last = monthRuns[monthRuns.length - 1];
+        if (last && last.key === key) last.endIdx = idx;
+        else monthRuns.push({ key, startIdx: idx, endIdx: idx, date: p.m.start });
+      });
+
+      let todayX = null;
+      const k = points.findIndex((p) => p.m.start.getTime() >= today);
+      if (k > 0 && k < N) todayX = (points[k - 1].x + points[k].x) / 2;
+
+      return {
+        points, monthRuns, axisY, axisH, height, width,
+        fontTitle, fontDate, fontMonth, labelLines, lineH, labelW, labelH,
+        monthStripH, todayX
+      };
+    }
+
+    function paintMilestoneLayout(layout, width) {
+      const root = div("mv-root");
+      root.style.width = `${width}px`;
+      root.style.height = `${layout.height}px`;
+
+      const points = layout.points;
+      const firstX = points[0].x;
+      const lastX = points[points.length - 1].x;
+
+      const axis = div("mv-axis");
+      axis.style.left = `${firstX}px`;
+      axis.style.width = `${Math.max(0, lastX - firstX)}px`;
+      axis.style.top = `${layout.axisY}px`;
+      root.appendChild(axis);
+
+      layout.monthRuns.forEach((run, i) => {
+        if (i > 0) {
+          const boundary = (points[run.startIdx].x + points[run.startIdx - 1].x) / 2;
+          const divider = div("mv-month-divider");
+          divider.style.left = `${boundary}px`;
+          root.appendChild(divider);
+        }
+        const center = (points[run.startIdx].x + points[run.endIdx].x) / 2;
+        const monthLabel = div("mv-month-label");
+        monthLabel.style.left = `${center}px`;
+        monthLabel.style.top = `${Math.max(0, (layout.monthStripH - layout.fontMonth) / 2 - 2)}px`;
+        monthLabel.style.fontSize = `${layout.fontMonth}px`;
+        monthLabel.textContent = `${MONTHS_SHORT[run.date.getMonth()].toLowerCase()} ${String(run.date.getFullYear()).slice(-2)}`;
+        root.appendChild(monthLabel);
+      });
+
+      if (layout.todayX !== null) {
+        const todayLine = div("mv-today");
+        todayLine.style.left = `${layout.todayX}px`;
+        root.appendChild(todayLine);
+        const todayLabel = div("mv-today-label");
+        todayLabel.style.left = `${layout.todayX}px`;
+        todayLabel.style.top = `${layout.axisY + layout.axisH / 2}px`;
+        todayLabel.textContent = "сегодня";
+        root.appendChild(todayLabel);
+      }
+
+      points.forEach((p) => {
+        const leader = div("mv-leader");
+        leader.style.left = `${p.x}px`;
+        leader.style.background = p.color;
+        if (p.side === "above") {
+          leader.style.top = `${p.labelBottom}px`;
+          leader.style.height = `${Math.max(0, layout.axisY - p.labelBottom)}px`;
+        } else {
+          leader.style.top = `${layout.axisY}px`;
+          leader.style.height = `${Math.max(0, p.labelTop - layout.axisY)}px`;
+        }
+        if (p.isPast) leader.style.opacity = ".3";
+        root.appendChild(leader);
+
+        const dot = div("mv-dot");
+        dot.style.left = `${p.x}px`;
+        dot.style.top = `${layout.axisY}px`;
+        dot.style.background = p.color;
+        root.appendChild(dot);
+
+        const chip = div(`mv-chip${p.isPast ? " is-past" : ""}`);
+        chip.style.left = `${p.x}px`;
+        chip.style.top = `${p.labelTop}px`;
+        chip.style.width = `${layout.labelW}px`;
+        chip.style.background = p.color;
+        const titleEl = div("mv-chip-title");
+        titleEl.style.fontSize = `${layout.fontTitle}px`;
+        titleEl.style.lineHeight = `${layout.lineH}px`;
+        titleEl.style.webkitLineClamp = String(layout.labelLines);
+        titleEl.style.maxHeight = `${layout.labelLines * layout.lineH}px`;
+        titleEl.textContent = p.title;
+        const dateEl = div("mv-chip-date");
+        dateEl.style.fontSize = `${layout.fontDate}px`;
+        dateEl.textContent = p.dateText;
+        chip.append(titleEl, dateEl);
+        root.appendChild(chip);
+      });
+
+      els.roadmap.appendChild(root);
     }
 
     function renderEmpty(message, options = {}) {
