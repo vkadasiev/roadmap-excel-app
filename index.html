@@ -470,6 +470,49 @@
       white-space: nowrap;
     }
 
+    .milestone-line {
+      position: absolute;
+      width: 2px;
+      border-radius: 1px;
+    }
+
+    .milestone-flag {
+      position: absolute;
+      z-index: 5;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    .milestone-flag-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 340px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      color: #fff;
+      line-height: 1.15;
+      overflow: hidden;
+    }
+
+    .milestone-flag-title {
+      max-width: 100%;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .milestone-flag-date {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: .82;
+    }
+
     .item.has-reason .item-title,
     .item.has-reason .item-date {
       padding-right: calc(var(--info-button-size) + var(--info-button-inset) * 2);
@@ -521,6 +564,19 @@
 
     .item-info-button:hover {
       background: #cfcfcf;
+    }
+
+    .item-info-button.has-risk {
+      background: #f2b41a;
+    }
+
+    .item-info-button.has-risk::before,
+    .item-info-button.has-risk::after {
+      background: #5c4708;
+    }
+
+    .item-info-button.has-risk:hover {
+      background: #e3a513;
     }
 
     .reason-backdrop {
@@ -620,6 +676,21 @@
       color: var(--ink);
       font-size: 16px;
       line-height: 1.55;
+    }
+
+    .reason-section + .reason-section {
+      margin-top: 22px;
+    }
+
+    .reason-section-title {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .reason-section.is-risk .reason-content {
+      border-left-color: #f2b41a;
     }
 
     .reason-paragraph {
@@ -1017,6 +1088,7 @@
       "офд": "#2b9faa",
       "эдо": "#e8a51a",
       "документооборот": "#e8a51a",
+      "эпд": "#e8a51a",
       "елк": "#2F6A98",
       "елкп": "#2F6A98",
       "кассы": "#2b9faa",
@@ -1033,10 +1105,18 @@
       "го": "./assets/logos/go.svg",
       "эдо": "./assets/logos/edo.svg",
       "документооборот": "./assets/logos/edo.svg",
+      "эпд": "./assets/logos/epd.svg",
       "елк": "./assets/logos/elk.svg",
       "елкп": "./assets/logos/elk.svg"
     }));
     const FALLBACK_YEAR = new Date().getFullYear();
+
+    const MILESTONE_KEYWORDS = new Set(
+      ["веха", "вехи", "milestone", "milestones", "ключевая дата", "ключевые даты", "key date", "key dates"].map(normalizeHeader)
+    );
+    function isMilestoneType(value) {
+      return MILESTONE_KEYWORDS.has(normalizeHeader(value));
+    }
 
     const sampleItems = [
       ["Документооборот", "Модальное окно подписания ответного титула акта сверки", "12.Jun"],
@@ -1058,8 +1138,12 @@
       ["Бухгалтерия", "Виджет. ЕНС", "15.Jul"],
       ["Бухгалтерия", "КУДиР", "21.Aug"],
       ["Аккаунт", "Онбординг и восстановление пароля", "04.Sep"],
-      ["Покупки", "Покупки: витрина, заказы, оплата", "04.Sep"]
-    ].map(([product, title, date]) => ({ product, lane: product, title, start: parseDate(date, 2026), end: null }));
+      ["Покупки", "Покупки: витрина, заказы, оплата", "04.Sep"],
+      ["ЭПД", "Реализация eCMR", "12.Aug"],
+      ["ЭПД", "Новые форматы ЭПЛ", "28.Aug"],
+      ["Документооборот", "Веха 1", "20.Jul", "Веха"],
+      ["Кассы", "Релиз кассовой части", "21.Aug", "Веха"]
+    ].map(([product, title, date, type]) => ({ product, lane: product, title, start: parseDate(date, 2026), end: null, isMilestone: isMilestoneType(type) }));
 
     const state = {
       items: [],
@@ -1323,6 +1407,7 @@
           "delay reason",
           "reschedule reason"
         ]));
+        const risks = cleanReason(valueByHeader(row, ["риски", "риск", "риски и ограничения", "risks", "risk"]));
         const startRaw = releaseRaw ||
           valueByHeader(row, ["начало", "дата начала", "старт", "start", "start date", "startdate"]) ||
           valueByHeader(row, ["дата", "срок", "релиз", "дедлайн", "date", "deadline", "due date", "duedate"]);
@@ -1331,7 +1416,9 @@
         const end = parseDate(endRaw, Number(els.yearInput.value) || FALLBACK_YEAR);
 
         if (!String(title || "").trim() || !start) return null;
-        const normalized = normalizePeriod(start, end);
+        const type = valueByHeader(row, ["тип", "type", "вид", "kind"]);
+        const isMilestone = isMilestoneType(type);
+        const normalized = normalizePeriod(start, isMilestone ? null : end);
         return {
           id: `item-${index}`,
           title: String(title).trim(),
@@ -1339,7 +1426,9 @@
           lane: String(product || "Продукт").trim(),
           start: normalized.start,
           end: normalized.end,
-          reason
+          reason,
+          risks,
+          isMilestone
         };
       }).filter(Boolean);
     }
@@ -1506,7 +1595,7 @@
         const node = div("month");
         node.style.left = `${month.left}px`;
         node.style.width = `${month.width}px`;
-        node.textContent = MONTHS_RU[month.start.getMonth()];
+        node.textContent = `${MONTHS_SHORT[month.start.getMonth()].toLowerCase()} ${String(month.start.getFullYear()).slice(-2)}`;
         monthRow.appendChild(node);
       });
 
@@ -1529,8 +1618,17 @@
         chart.appendChild(line);
       });
 
+      layout.milestones.forEach((mark) => {
+        const line = div("milestone-line");
+        line.style.left = `${mark.lineX}px`;
+        line.style.top = "0";
+        line.style.height = `${layout.height}px`;
+        line.style.background = mark.color;
+        chart.appendChild(line);
+      });
+
       layout.items.forEach((item) => {
-        const node = div(`item${item.isRange ? " range" : ""}${item.reason ? " has-reason" : ""}${item.laneIndex % 2 === 1 ? " on-white-lane" : ""}`);
+        const node = div(`item${item.isRange ? " range" : ""}${(item.reason || item.risks) ? " has-reason" : ""}${item.laneIndex % 2 === 1 ? " on-white-lane" : ""}`);
         node.style.left = `${item.x}px`;
         node.style.top = `${item.y}px`;
         node.style.width = `${item.width}px`;
@@ -1541,20 +1639,32 @@
           <div class="item-title">${escapeHtml(item.title)}</div>
           <div class="item-date">${escapeHtml(formatItemDate(item.sourceStart || item.start, item.sourceEnd || null))}</div>
         `;
-        if (item.reason) {
+        if (item.reason || item.risks) {
           const infoButton = document.createElement("button");
-          infoButton.className = "item-info-button";
+          infoButton.className = `item-info-button${item.risks ? " has-risk" : ""}`;
           infoButton.type = "button";
-          infoButton.title = "Причина переноса";
-          infoButton.setAttribute("aria-label", "Показать причину переноса");
+          const infoLabel = item.risks ? "Риски и причина переноса" : "Причина переноса";
+          infoButton.title = infoLabel;
+          infoButton.setAttribute("aria-label", `Показать: ${infoLabel}`);
           infoButton.textContent = "";
           infoButton.addEventListener("click", (event) => {
             event.stopPropagation();
-            showReason(item.reason);
+            showDetails(item);
           });
           node.appendChild(infoButton);
         }
         chart.appendChild(node);
+      });
+
+      layout.milestones.forEach((mark) => {
+        const flag = div("milestone-flag");
+        flag.style.left = `${mark.labelX}px`;
+        flag.style.top = `${mark.labelY}px`;
+        flag.dataset.laneTop = mark.laneTop;
+        flag.dataset.laneBottom = mark.laneBottom;
+        flag.innerHTML = `<span class="milestone-flag-label"><span class="milestone-flag-title">${escapeHtml(mark.title)}</span><span class="milestone-flag-date">${escapeHtml(formatDate(mark.start))}</span></span>`;
+        flag.querySelector(".milestone-flag-label").style.background = mark.color;
+        chart.appendChild(flag);
       });
 
       const labels = div("lane-labels");
@@ -1746,31 +1856,57 @@
       if (cornerLabel) cornerLabel.style.transform = pinnedXY;
       if (monthRow) monthRow.style.transform = pinnedY;
       if (headerDivider) headerDivider.style.transform = pinnedY;
+
+      const stickGap = state.isPrintLayout ? 2 : 6;
+      els.roadmap.querySelectorAll(".milestone-flag").forEach((flag) => {
+        const labelY = parseFloat(flag.style.top) || 0;
+        const laneBottom = parseFloat(flag.dataset.laneBottom) || 0;
+        const flagHeight = flag.offsetHeight || 28;
+        const maxY = Math.max(labelY, laneBottom - flagHeight - 4);
+        const stickY = Math.min(Math.max(labelY, offsetY + stickGap), maxY);
+        flag.style.transform = `translate(-50%, ${stickY - labelY}px)`;
+      });
     }
 
-    function showReason(text) {
+    function showDetails(item) {
       closeReason();
 
+      const heading = String(item && item.title || "Подробности").trim() || "Подробности";
       const backdrop = document.createElement("div");
       backdrop.className = "reason-backdrop";
       backdrop.innerHTML = `
         <div class="reason-dialog" role="dialog" aria-modal="true" aria-labelledby="reasonTitle">
           <div class="reason-header">
-            <h2 class="reason-title" id="reasonTitle">Причина переноса</h2>
+            <h2 class="reason-title" id="reasonTitle">${escapeHtml(heading)}</h2>
             <button class="reason-close" type="button" aria-label="Закрыть"></button>
           </div>
-          <div class="reason-body">
-            <div class="reason-content"></div>
-          </div>
+          <div class="reason-body"></div>
         </div>
       `;
 
-      renderReasonText(backdrop.querySelector(".reason-content"), text);
+      const body = backdrop.querySelector(".reason-body");
+      if (item && item.reason) appendDetailSection(body, "Причина переноса плановой даты релиза", item.reason, false);
+      if (item && item.risks) appendDetailSection(body, "Риски", item.risks, true);
+      if (!body.childElementCount) appendDetailSection(body, "Подробности", "", false);
+
       backdrop.querySelector(".reason-close").addEventListener("click", closeReason);
       backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) closeReason();
       });
       document.body.appendChild(backdrop);
+    }
+
+    function appendDetailSection(body, title, text, isRisk) {
+      const section = document.createElement("section");
+      section.className = `reason-section${isRisk ? " is-risk" : ""}`;
+      const heading = document.createElement("h3");
+      heading.className = "reason-section-title";
+      heading.textContent = title;
+      const content = document.createElement("div");
+      content.className = "reason-content";
+      section.append(heading, content);
+      body.appendChild(section);
+      renderReasonText(content, text);
     }
 
     function renderReasonText(container, text) {
@@ -1858,7 +1994,7 @@
         width: daysBetween(month.start, addDays(month.end, 1)) * scale
       }));
 
-      items.forEach((item) => {
+      items.filter((item) => !item.isMilestone).forEach((item) => {
         const month = monthForDate(months, item.start);
         if (!month) return;
 
@@ -1951,31 +2087,51 @@
     }
 
     function buildLayout(sourceItems, monthLayout, scale, chartWidth) {
+      const isPrint = state.isPrintLayout;
+      const msCharWidth = isPrint ? 3.6 : 6.6;
+      const msLabelPad = isPrint ? 12 : 22;
+      const msStrip = isPrint ? 16 : 36;
+
       const lanesByKey = new Map();
-      sourceItems.forEach((sourceItem, index) => {
-        const sourceName = sourceItem.product || sourceItem.lane || "Продукт";
+      const ensureLane = (sourceName) => {
         const laneKey = productLaneKey(sourceName);
         if (!lanesByKey.has(laneKey)) {
           lanesByKey.set(laneKey, {
             key: laneKey,
             name: productDisplayName(sourceName),
-            items: []
+            items: [],
+            milestones: []
           });
         }
-        lanesByKey.get(laneKey).items.push({
-          ...sourceItem,
-          order: index,
-          color: productColor(laneKey)
-        });
+        return lanesByKey.get(laneKey);
+      };
+
+      sourceItems.filter((item) => !item.isMilestone).forEach((sourceItem, index) => {
+        const lane = ensureLane(sourceItem.product || sourceItem.lane || "Продукт");
+        lane.items.push({ ...sourceItem, order: index, color: productColor(lane.key) });
+      });
+
+      sourceItems.filter((item) => item.isMilestone).forEach((milestone) => {
+        const lane = ensureLane(milestone.product || milestone.lane || "Продукт");
+        const title = String(milestone.title || "").trim();
+        const lineX = dateToX(monthLayout, milestone.start, scale);
+        const halfLabel = (Math.ceil(title.length * msCharWidth) + msLabelPad) / 2;
+        const minX = Math.min(halfLabel + 2, chartWidth / 2);
+        const maxX = Math.max(chartWidth - halfLabel - 2, chartWidth / 2);
+        const labelX = Math.max(minX, Math.min(lineX, maxX));
+        lane.milestones.push({ title, lineX, labelX, color: productColor(lane.key), start: milestone.start });
       });
 
       const laneGroups = Array.from(lanesByKey.values());
 
       const lanes = [];
       const laidOut = [];
+      const milestones = [];
       let cursorTop = 0;
 
       laneGroups.forEach((laneGroup, laneIndex) => {
+        const stripHeight = laneGroup.milestones.length ? msStrip : 0;
+
         const laneItems = laneGroup.items
           .map((item) => {
             const width = itemDisplayWidth(item, scale, monthLayout);
@@ -2004,7 +2160,7 @@
           item.slot = slot;
         });
 
-        const slotGap = state.isPrintLayout ? 4 : 18;
+        const slotGap = isPrint ? 4 : 18;
         const slotTops = [];
         let slotCursor = 0;
         slotHeights.forEach((height, index) => {
@@ -2012,10 +2168,10 @@
           slotCursor += height + slotGap;
         });
 
-        const laneMinHeight = state.isPrintLayout ? 46 : 146;
-        const lanePadding = state.isPrintLayout ? 10 : 48;
-        const laneItemTop = state.isPrintLayout ? 5 : 24;
-        const laneHeight = Math.max(laneMinHeight, Math.max(0, slotCursor - slotGap) + lanePadding);
+        const laneMinHeight = isPrint ? 46 : 146;
+        const lanePadding = isPrint ? 10 : 48;
+        const laneItemTop = (isPrint ? 5 : 24) + stripHeight;
+        const laneHeight = stripHeight + Math.max(laneMinHeight, Math.max(0, slotCursor - slotGap) + lanePadding);
         const lane = { key: laneGroup.key, name: laneGroup.name, top: cursorTop, height: laneHeight };
         lanes.push(lane);
 
@@ -2027,10 +2183,19 @@
           });
         });
 
+        laneGroup.milestones.forEach((mark) => {
+          milestones.push({
+            ...mark,
+            laneTop: cursorTop,
+            laneBottom: cursorTop + laneHeight,
+            labelY: cursorTop + (isPrint ? 3 : 8)
+          });
+        });
+
         cursorTop += laneHeight;
       });
 
-      return { lanes, items: laidOut, height: cursorTop };
+      return { lanes, items: laidOut, milestones, height: cursorTop };
     }
 
     function getVisibleRange(selectedRange) {
